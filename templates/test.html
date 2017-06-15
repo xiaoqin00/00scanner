@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+	    <title>00Scanner</title>
+	    <link rel = "stylesheet" type = "text/css" href = "/static/css/style.css">
+	    <link rel = "stylesheet" type = "text/css" href = "/static/css/bootstrap.css">
+	    <link rel = "stylesheet" href = "/static/css/font-awesome.css">
+	    <link rel = "stylesheet" type = "text/css" href = "/static/css/style.css">
+	    <link rel = "stylesheet" href = "/static/css/animate.css">
+	</head>
+	<body >
+	    <header class="navbar navbar-static-top bs-docs-nav" id="top" role="banner">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <button class="navbar-toggle collapsed" type="button" data-toggle="collapse" data-target="#bs-navbar" aria-controls="bs-navbar" aria-expanded="false">
+		        <span class="sr-only">00Scanner</span>
+		        <span class="icon-bar"></span>
+		        <span class="icon-bar"></span>
+		        <span class="icon-bar"></span>
+		      </button>
+		      <a href="../" class="navbar-brand">主页</a>
+		    </div>
+		    <nav id="bs-navbar" class="collapse navbar-collapse">
+		      <ul class="nav navbar-nav">
+		        <li>
+		          <a href="/index">00Scanner</a>
+		        </li>
+		        </li>
+		      </ul>
+		    </nav>
+		  </div>
+		</header>
+
+		<div class="bs-docs-header" id="content" tabindex="-1">
+	      <div class="container">
+	        <h1 class="text-center">00Scanner</h1>
+	        <form class="form-inline" style="padding-left: 170px" action="/baseAction" method="get">
+			  	<div class="form-group">
+				      <input type="dork" name="target" class="form-control" style="height:46px; width:800px;" id="inputdork" placeholder="请输入网址">
+				 </div>
+			  	<button id="search" type="submit" class="btn btn-default btn-outline-inverse btn-lg" >开始扫描</button>
+			</form>
+	      </div>
+	    </div>
+
+	    <div class="container bs-docs-container">
+    		<h2 class="bs-docs-featurette-title">关于扫描器：</h2>
+    		<p class="lead">自动漏洞扫描器，自动子域名爆破，自动爬取注入，调用sqlmapapi检测注入，端口扫描，目录爆破，子网段服务探测及其端口扫描，常用框架漏洞检测</p>
+    		<canvas id="mychart" height="390" width="1170"></canvas>
+	    </div>
+	</body>
+	<script type = "text/javascript" src="/static/js/jquery-2.0.3.min.js"> </script>
+	<script type = "text/javascript" src="/static/js/bootstrap.js"></script>
+</html>

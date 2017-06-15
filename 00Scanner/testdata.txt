@@ -1,0 +1,9 @@
+c段和web指纹扫描：192.168.0.0/24
+cms扫描：http://www.wenlong.date
+webshell查找：D:\phpStudy\WWW\dvwa
+端口扫描：http://www.wenlong.date
+子域名扫描：http://www.baidu.com
+弱口令扫描：127.0.0.1
+sql注入扫描：http://www.microtek.com.cn/happystudy/happystudy_info.php?idnow=4
+web后台扫描：http://www.wenlong.date
+网站目录扫描：http://www.wenlong.date

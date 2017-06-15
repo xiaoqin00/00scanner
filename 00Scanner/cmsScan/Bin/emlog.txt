@@ -1,0 +1,3 @@
+/templates/default/main.css------emlog------emlog
+/rss.php------emlog------emlog
+/install.php------emlog------emlog

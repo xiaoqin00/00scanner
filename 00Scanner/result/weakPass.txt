@@ -1,0 +1,1 @@
+[*20:49:28] 127.0.0.1:3306 mysql username:root,password:root

