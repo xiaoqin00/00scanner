@@ -1,6 +1,6 @@
 # 00scanner
 00scanner是一个多功能扫描器，一方面它是辅助工具，能够对目标网络进行信息搜集；另一方面，它是一个漏洞扫描器，能够对常见漏洞进行扫描。支持扩展插件，即插即用，方便快捷。</br>
-扫描器采用python2.7版本，django框架，mysql数据库，运行直接python runserver manager.py即可，然后通过浏览器访问。</br>
+扫描器采用python2.7版本，django框架，mysql数据库，B/S架构，直接运行python runserver manager.py即可，然后通过浏览器访问。</br>
 扫描器采用模块化编程思想，将各个功能分装为各个模块。</br>
 包含模块：</br>
 （1）主爬虫模块，获取目标站点的网站的数据。</br>
